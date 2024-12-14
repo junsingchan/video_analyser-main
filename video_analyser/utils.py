@@ -1,4 +1,7 @@
 import csv
+import os.path
+import shutil
+import subprocess
 from dataclasses import dataclass
 from datetime import timedelta
 import cv2
@@ -219,3 +222,34 @@ def organize_subtitles_by_scene(subs: pysrt.SubRipFile, scene_times: list) -> li
                 scene_transcripts[scene_idx].append(sub.text)
                 break
     return scene_transcripts
+
+
+def check_ffmpeg():
+    try:
+        # 检查方法1: 使用shutil查找可执行文件
+        check1 = shutil.which('ffmpeg') is not None
+
+        # 检查方法2: 尝试执行ffmpeg命令
+        try:
+            result = subprocess.run(['ffmpeg', '-version'],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            check2 = result.returncode == 0
+        except (subprocess.SubprocessError, FileNotFoundError):
+            check2 = False
+
+        # 检查方法3: 检查当前目录是否存在ffmpeg.exe
+        check3 = os.path.exists("ffmpeg.exe")
+
+        # 只要有一个检查通过就认为ffmpeg可用
+        ffmpeg_available = check1 or check2 or check3
+
+        if not ffmpeg_available:
+            logger.error("FFmpeg未安装，无法进行分析！")
+            return False
+
+        return ffmpeg_available
+
+    except Exception as e:
+        logger.error(f"检查FFmpeg时发生错误: {str(e)}")
+        return False

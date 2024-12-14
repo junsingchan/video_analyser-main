@@ -18,6 +18,7 @@ from .utils import (
     prepare_script_values,
     calculate_scene_times,
     organize_subtitles_by_scene,
+    check_ffmpeg,
 )
 
 
@@ -72,6 +73,10 @@ async def analyse_video(
     start_time = time.time()
     temp_dir = "temp"
     os.makedirs(temp_dir, exist_ok=True)
+
+    if not check_ffmpeg():
+        return
+
     if not check_video_duration(video_path, max_duration_seconds):
         return
 
