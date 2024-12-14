@@ -1,3 +1,4 @@
+import asyncio
 import time
 import subprocess
 import sherpa_onnx
@@ -7,20 +8,25 @@ from tempfile import NamedTemporaryFile
 from .utils import Segment, correct_srt_with_transcript
 
 
-def init_recognizer(
+async def init_recognizer(
     model="weights/asr/sensevoice.onnx", tokens="weights/asr/tokens.txt", debug=False
 ):
     start_time = time.time()
     if debug:
         logger.debug(f"加载Sensevoice模型：{model}")
 
-    recognizer = sherpa_onnx.OfflineRecognizer.from_sense_voice(
-        model=model,
-        tokens=tokens,
-        use_itn=True,
-        debug=False,
-        num_threads=8,
-        language="auto",
+    # 将CPU密集型操作放在线程池中执行
+    loop = asyncio.get_event_loop()
+    recognizer = await loop.run_in_executor(
+        None,
+        lambda: sherpa_onnx.OfflineRecognizer.from_sense_voice(
+            model=model,
+            tokens=tokens,
+            use_itn=True,
+            debug=False,
+            num_threads=8,
+            language="auto",
+        ),
     )
 
     if debug:
@@ -171,12 +177,7 @@ def generate_subtitles(
         )
 
 
-def transcribe(video_path: str, srt_path: str = None) -> tuple:
-    # 初始化识别器
-    recognizer = init_recognizer(
-        model="weights/asr/sensevoice.onnx", tokens="weights/asr/tokens.txt", debug=True
-    )
-
+def transcribe(recognizer, video_path: str, srt_path: str = None) -> tuple:
     srt_path = (
         NamedTemporaryFile(suffix=".srt", dir="temp").name
         if srt_path is None
