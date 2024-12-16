@@ -6,7 +6,7 @@ from .utils import HEADERS
 def get_pipix_info(url):
     response = requests.get(url, headers=HEADERS)
     id_url = response.url
-    item_id = re.search(r"\/item\/(.*?)\?app_id", id_url)[1]
+    item_id = re.search(r"/item/(.*?)\?app_id", id_url)[1]
     url_data = requests.get(
         f"http://h5.pipix.com/bds/webapi/item/detail/?item_id={item_id}"
     ).json()

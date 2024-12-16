@@ -4,7 +4,7 @@ from .utils import HEADERS
 
 
 def get_weishi_info(url):
-    feed_id = re.search(r"feed\/(.*?)\/", url)[1]
+    feed_id = re.search(r"feed/(.*?)/", url)[1]
     response = requests.get(
         f"https://h5.weishi.qq.com/webapp/json/weishi/WSH5GetPlayPage?feedid={feed_id}",
         headers=HEADERS,

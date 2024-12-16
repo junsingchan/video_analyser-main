@@ -1,4 +1,5 @@
 import asyncio
+import os
 import time
 import subprocess
 import sherpa_onnx
@@ -9,28 +10,45 @@ from .utils import Segment, correct_srt_with_transcript
 
 
 async def init_recognizer(
-    model="weights/asr/sensevoice.onnx", tokens="weights/asr/tokens.txt", debug=False
-):
+    model: str = "weights/asr/sensevoice.onnx",
+    tokens: str = "weights/asr/tokens.txt",
+    debug: bool = False,
+    num_threads: int = 8,
+) -> sherpa_onnx.OfflineRecognizer:
+    """初始化语音识别器
+
+    Args:
+        model: 模型路径
+        tokens: tokens文件路径
+        debug: 是否启用调试日志
+        num_threads: 使用的线程数
+
+    Returns:
+        sherpa_onnx.OfflineRecognizer: 初始化好的识别器实例
+    """
     start_time = time.time()
     if debug:
         logger.debug(f"加载Sensevoice模型：{model}")
 
-    # 将CPU密集型操作放在线程池中执行
-    loop = asyncio.get_event_loop()
-    recognizer = await loop.run_in_executor(
+    if not os.path.exists(model) or not os.path.exists(tokens):
+        logger.error(f"模型文件不存在: {model}, {tokens}")
+
+    # 使用默认的线程池执行CPU密集型操作
+    recognizer = await asyncio.get_event_loop().run_in_executor(
         None,
         lambda: sherpa_onnx.OfflineRecognizer.from_sense_voice(
             model=model,
             tokens=tokens,
             use_itn=True,
             debug=False,
-            num_threads=8,
+            num_threads=num_threads,
             language="auto",
         ),
     )
 
     if debug:
         logger.debug(f"SenseVoice初始化用时：{time.time() - start_time:.2f}秒")
+
     return recognizer
 
 

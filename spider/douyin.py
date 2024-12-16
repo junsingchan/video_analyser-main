@@ -10,7 +10,7 @@ def get_douyin_info(url):
         f"https://www.iesdouyin.com/share/video/{video_id}/",
         headers=DOUYIN_MOBILE_HEADERS,
     )
-    data = re.search(r"_ROUTER_DATA\s*=\s*(\{.*?\});", response.text)[1]
+    data = re.search(r"_ROUTER_DATA\s*=\s*(\{.*?});", response.text)[1]
     json_data = json.loads(data)
     item_list = json_data["loaderData"]["video_(id)/page"]["videoInfoRes"]["item_list"][
         0
