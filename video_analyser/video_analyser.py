@@ -2,8 +2,6 @@ import asyncio
 import os
 import shutil
 import time
-from typing import List
-import aiohttp
 import pysrt
 from loguru import logger
 from .scene_detector import SceneDetector
@@ -25,7 +23,7 @@ from .utils import (
 def update_csv_scripts(
     regconizer, csv_path: str, transcript_path: str, video_path: str
 ) -> tuple:
-    """在CSV文件中添加文案列内容"""
+    """添加CSV文件的文案列"""
     transcript, temp_srt = transcribe(regconizer, video_path)
     save_transcript(transcript_path, transcript)
     subs = pysrt.open(temp_srt)
@@ -34,29 +32,6 @@ def update_csv_scripts(
     scene_transcripts = organize_subtitles_by_scene(subs, scene_times)
     scripts = prepare_script_values(scene_transcripts)
     return update_csv_column(csv_path, "文案", scripts)
-
-
-async def describe_image_async(frame_path: str, frame_describer) -> str:
-    return await frame_describer.describe_image_async(frame_path)
-
-
-async def describe_images_concurrent(
-    frame_describer, frames: List[str], max_concurrent: int = 5
-) -> List[str]:
-    async with aiohttp.ClientSession():
-        # 将frames分成大小为max_concurrent的批次
-        batch_size = max_concurrent
-        results = []
-
-        for i in range(0, len(frames), batch_size):
-            batch = frames[i : i + batch_size]
-            # 为每个批次创建任务
-            tasks = [describe_image_async(frame, frame_describer) for frame in batch]
-            # 并发执行批次中的任务
-            batch_results = await asyncio.gather(*tasks)
-            results.extend(batch_results)
-
-        return results
 
 
 async def analyse_video(
@@ -70,6 +45,24 @@ async def analyse_video(
     max_concurrent: int = 8,
     debug: bool = True,
 ) -> tuple | None:
+    """
+    分析视频主函数
+    异步分析视频，处理分镜检测、转录和描述。
+
+    参数:
+        video_path (str): 视频文件路径。
+        csv_path (str): CSV文件路径。
+        transcript_path (str): 转录文件路径。
+        api_key (str): API密钥。
+        base_url (str): API基础URL。
+        min_scene_duration_seconds (float): 最小分镜持续时间（秒）。
+        max_duration_seconds (int): 最大视频时长（秒）。
+        max_concurrent (int): 最大并发描述任务数。
+        debug (bool): 是否启用调试模式。
+
+    返回:
+        tuple | None: 返回CSV和转录文件路径，或在出错时返回None。
+    """
     start_time = time.time()
     temp_dir = "temp"
     os.makedirs(temp_dir, exist_ok=True)
@@ -80,26 +73,34 @@ async def analyse_video(
     if not check_video_duration(video_path, max_duration_seconds):
         return
 
-    # 启动recognizer初始化任务
-    recognizer_task = asyncio.create_task(init_recognizer(debug=debug))
-
-    # 第一步：检测分镜
+    # 创建场景检测器
     scene_detector = SceneDetector(video_path, debug)
-    scene_detector.detect_scenes(
-        min_scene_duration=min_scene_duration_seconds,
-        csv_path=csv_path,
-        frames_dir=temp_dir,
+
+    # 同时创建两个任务
+    recognizer_task = asyncio.create_task(init_recognizer(debug=debug))
+    scene_detect_task = asyncio.create_task(
+        asyncio.to_thread(
+            scene_detector.detect_scenes,
+            threshold=2.0,
+            min_scene_duration=min_scene_duration_seconds,
+            window_size=5,
+            csv_path=csv_path,
+            save_frames=True,
+            frames_dir=temp_dir,
+        )
     )
 
-    # 第二步：等待recognizer初始化完成并写入csv文案列
-    recognizer = await recognizer_task
+    # 第一步：检测分镜
+    recognizer, _ = await asyncio.gather(recognizer_task, scene_detect_task)
+
+    # 第二步：写入csv文案列
     header, rows = update_csv_scripts(recognizer, csv_path, transcript_path, video_path)
     save_csv(csv_path, header, rows)
 
     # 第三步: 写入csv描述列
     frame_describer = FrameDescriber(api_key, base_url, debug)
-    frames_description = await describe_images_concurrent(
-        frame_describer, scene_detector.saved_frames, max_concurrent
+    frames_description = await frame_describer.describe_images_concurrent(
+        scene_detector.saved_frames, max_concurrent
     )
     header, rows = update_csv_column(csv_path, "描述", frames_description)
     save_csv(csv_path, header, rows)

@@ -23,15 +23,15 @@ class VideoAnalysisRequest(BaseModel):
 async def analyse_video_endpoint(request: VideoAnalysisRequest):
     try:
         csv_path, transcript_path = await analyse_video(
-                video_path=request.video_path,
-                csv_path=request.csv_path,
-                transcript_path=request.transcript_path,
-                api_key=request.api_key,
-                base_url=request.base_url,
-                min_scene_duration_seconds=request.min_scene_duration_seconds,
-                max_duration_seconds=request.max_duration_seconds,
-                debug=request.debug,
-            )
+            video_path=request.video_path,
+            csv_path=request.csv_path,
+            transcript_path=request.transcript_path,
+            api_key=request.api_key,
+            base_url=request.base_url,
+            min_scene_duration_seconds=request.min_scene_duration_seconds,
+            max_duration_seconds=request.max_duration_seconds,
+            debug=request.debug,
+        )
         return {"csv_path": csv_path, "transcript_path": transcript_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

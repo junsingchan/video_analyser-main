@@ -227,13 +227,13 @@ def organize_subtitles_by_scene(subs: pysrt.SubRipFile, scene_times: list) -> li
 def check_ffmpeg():
     try:
         # 检查方法1: 使用shutil查找可执行文件
-        check1 = shutil.which('ffmpeg') is not None
+        check1 = shutil.which("ffmpeg") is not None
 
         # 检查方法2: 尝试执行ffmpeg命令
         try:
-            result = subprocess.run(['ffmpeg', '-version'],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
+            result = subprocess.run(
+                ["ffmpeg", "-version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             check2 = result.returncode == 0
         except (subprocess.SubprocessError, FileNotFoundError):
             check2 = False
