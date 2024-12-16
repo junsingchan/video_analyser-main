@@ -20,20 +20,6 @@ from .utils import (
 )
 
 
-def update_csv_scripts(
-    regconizer, csv_path: str, transcript_path: str, video_path: str
-) -> tuple:
-    """添加CSV文件的文案列"""
-    transcript, temp_srt = transcribe(regconizer, video_path)
-    save_transcript(transcript_path, transcript)
-    subs = pysrt.open(temp_srt)
-    rows = read_csv_rows(csv_path)
-    scene_times = calculate_scene_times(rows)
-    scene_transcripts = organize_subtitles_by_scene(subs, scene_times)
-    scripts = prepare_script_values(scene_transcripts)
-    return update_csv_column(csv_path, "文案", scripts)
-
-
 async def analyse_video(
     video_path: str,
     csv_path: str,
@@ -73,10 +59,7 @@ async def analyse_video(
     if not check_video_duration(video_path, max_duration_seconds):
         return
 
-    # 创建场景检测器
     scene_detector = SceneDetector(video_path, debug)
-
-    # 同时创建两个任务
     recognizer_task = asyncio.create_task(init_recognizer(debug=debug))
     scene_detect_task = asyncio.create_task(
         asyncio.to_thread(
@@ -94,7 +77,14 @@ async def analyse_video(
     recognizer, _ = await asyncio.gather(recognizer_task, scene_detect_task)
 
     # 第二步：写入csv文案列
-    header, rows = update_csv_scripts(recognizer, csv_path, transcript_path, video_path)
+    transcript, temp_srt = transcribe(recognizer, video_path)
+    save_transcript(transcript_path, transcript)
+    subs = pysrt.open(temp_srt)
+    rows = read_csv_rows(csv_path)
+    scene_times = calculate_scene_times(rows)
+    scene_transcripts = organize_subtitles_by_scene(subs, scene_times)
+    scripts = prepare_script_values(scene_transcripts)
+    header, rows = update_csv_column(csv_path, "文案", scripts)
     save_csv(csv_path, header, rows)
 
     # 第三步: 写入csv描述列
