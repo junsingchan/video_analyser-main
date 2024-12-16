@@ -18,6 +18,7 @@ def download_and_analyse_video(url, csv_path, transcript_path, api_key):
             api_key=api_key,
         )
     )
+    os.remove(video_path)
     return csv_path, transcript_path
 
 
