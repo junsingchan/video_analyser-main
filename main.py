@@ -1,8 +1,7 @@
 import asyncio
 import os
 from dotenv import load_dotenv
-
-from utils import convert_to_json_data
+from api_utils import convert_to_json_data
 from video_analyser import analyse_video
 from spider import download_video
 
