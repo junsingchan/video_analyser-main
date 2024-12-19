@@ -195,7 +195,9 @@ def generate_subtitles(
         )
 
 
-def transcribe(recognizer, video_path: str, srt_path: str = None) -> tuple:
+def get_transcript_and_corrected_subtitles(
+    recognizer, video_path: str, srt_path: str = None
+) -> tuple:
     srt_path = (
         NamedTemporaryFile(suffix=".srt", dir="temp").name
         if srt_path is None

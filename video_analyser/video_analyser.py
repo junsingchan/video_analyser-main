@@ -6,7 +6,7 @@ import pysrt
 from loguru import logger
 from .scene_detector import SceneDetector
 from .frame_describer import FrameDescriber
-from .transcriber import transcribe, init_recognizer
+from .transcriber import get_transcript_and_corrected_subtitles, init_recognizer
 from .utils import (
     save_csv,
     check_video_duration,
@@ -77,7 +77,9 @@ async def analyse_video(
     recognizer, _ = await asyncio.gather(recognizer_task, scene_detect_task)
 
     # 第二步：写入csv文案列
-    transcript, temp_srt = transcribe(recognizer, video_path)
+    transcript, temp_srt = get_transcript_and_corrected_subtitles(
+        recognizer, video_path
+    )
     save_transcript(transcript_path, transcript)
     subs = pysrt.open(temp_srt)
     rows = read_csv_rows(csv_path)
