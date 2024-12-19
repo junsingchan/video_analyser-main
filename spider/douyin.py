@@ -23,4 +23,10 @@ def get_douyin_info(url):
         else video
     )
     cover = item_list["video"]["cover"]["url_list"][0]
-    return {"title": title, "cover": cover, "url": video_url, "type": "douyin", "id": video_id}
+    return {
+        "title": title,
+        "cover": cover,
+        "url": video_url,
+        "type": "douyin",
+        "id": video_id,
+    }

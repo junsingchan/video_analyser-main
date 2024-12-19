@@ -7,6 +7,7 @@ import uvicorn
 from spider import download_video
 from utils import convert_to_json_data
 from video_analyser import analyse_video
+from tempfile import NamedTemporaryFile
 
 
 app = FastAPI()
@@ -25,8 +26,6 @@ class VideoAnalysisRequest(BaseModel):
 
 class DownloadAndAnalyseRequest(BaseModel):
     url: str
-    csv_path: str
-    transcript_path: str
     api_key: str
 
 
@@ -49,22 +48,25 @@ async def analyse_video_endpoint(request: VideoAnalysisRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def download_and_analyse_video(url, csv_path, transcript_path, api_key, delete_temp=True):
+def download_and_analyse_video(url, api_key, delete_temp=True):
     video_path, video_id = download_video(url)
+    temp_csv = NamedTemporaryFile(suffix=".csv", dir="temp").name
+    temp_txt = NamedTemporaryFile(suffix=".txt", dir="temp").name
+
     asyncio.run(
         analyse_video(
             video_path,
-            csv_path=csv_path,
-            transcript_path=transcript_path,
+            csv_path=temp_csv,
+            transcript_path=temp_txt,
             api_key=api_key,
         )
     )
 
-    json_result = convert_to_json_data(csv_path, transcript_path, video_id)
+    json_result = convert_to_json_data(temp_csv, temp_txt, video_id)
     if delete_temp:
         os.remove(video_path)
-        os.remove(csv_path)
-        os.remove(transcript_path)
+        os.remove(temp_csv)
+        os.remove(temp_txt)
     return json_result
 
 
@@ -73,8 +75,6 @@ def download_and_analyse(request: DownloadAndAnalyseRequest):
     try:
         json_result = download_and_analyse_video(
             url=request.url,
-            csv_path=request.csv_path,
-            transcript_path=request.transcript_path,
             api_key=request.api_key,
         )
         return json_result
