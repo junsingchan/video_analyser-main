@@ -1,32 +1,13 @@
-import asyncio
 import os
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Optional
-import uvicorn
-from spider import download_video
-from utils import convert_to_json_data
-from video_analyser import analyse_video
 from tempfile import NamedTemporaryFile
-
+from fastapi import FastAPI, HTTPException
+import uvicorn
+from api_models import VideoAnalysisRequest, DownloadAndAnalyseRequest
+from api_utils import convert_to_json_data
+from spider import download_video
+from video_analyser import analyse_video
 
 app = FastAPI()
-
-
-class VideoAnalysisRequest(BaseModel):
-    video_path: str
-    csv_path: str
-    transcript_path: str
-    api_key: str
-    base_url: str = "https://api.bltcy.ai/v1"
-    min_scene_duration_seconds: Optional[float] = 3.0
-    max_duration_seconds: Optional[int] = 300
-    debug: Optional[bool] = True
-
-
-class DownloadAndAnalyseRequest(BaseModel):
-    url: str
-    api_key: str
 
 
 @app.post("/analyse-video")
@@ -48,35 +29,26 @@ async def analyse_video_endpoint(request: VideoAnalysisRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def download_and_analyse_video(url, api_key, delete_temp=True):
-    video_path, video_id = download_video(url)
-    temp_csv = NamedTemporaryFile(suffix=".csv", dir="temp").name
-    temp_txt = NamedTemporaryFile(suffix=".txt", dir="temp").name
-
-    asyncio.run(
-        analyse_video(
+@app.post("/download-and-analyse")
+async def download_and_analyse_endpoint(request: DownloadAndAnalyseRequest):
+    try:
+        video_path, video_id = download_video(request.url)
+        temp_csv = NamedTemporaryFile(suffix=".csv", dir="temp").name
+        temp_txt = NamedTemporaryFile(suffix=".txt", dir="temp").name
+        await analyse_video(
             video_path,
             csv_path=temp_csv,
             transcript_path=temp_txt,
-            api_key=api_key,
-        )
-    )
-
-    json_result = convert_to_json_data(temp_csv, temp_txt, video_id)
-    if delete_temp:
-        os.remove(video_path)
-        os.remove(temp_csv)
-        os.remove(temp_txt)
-    return json_result
-
-
-@app.post("/download-and-analyse")
-def download_and_analyse(request: DownloadAndAnalyseRequest):
-    try:
-        json_result = download_and_analyse_video(
-            url=request.url,
             api_key=request.api_key,
+            base_url=request.base_url,
+            min_scene_duration_seconds=request.min_scene_duration_seconds,
+            max_duration_seconds=request.max_duration_seconds,
+            debug=request.debug,
         )
+        json_result = convert_to_json_data(temp_csv, temp_txt, video_id)
+        for file in [video_path, temp_csv, temp_txt]:
+            if os.path.exists(file):
+                os.remove(file)
         return json_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
