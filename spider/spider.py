@@ -26,6 +26,7 @@ def download_video(url, save_path=None):
     start_time = time.time()
     video_info = get_video_info(url)
     video_url = video_info["url"]
+    video_id = video_info["id"]
     response = requests.get(video_url, headers=HEADERS, stream=True)
 
     if save_path is None:
@@ -39,4 +40,4 @@ def download_video(url, save_path=None):
     logger.info(
         f"视频下载成功：{save_path}（耗时{duration:.2f}秒，大小{size_mb:.2f} MB）"
     )
-    return save_path
+    return save_path, video_id

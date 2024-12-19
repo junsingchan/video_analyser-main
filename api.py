@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 import uvicorn
 from spider import download_video
+from utils import convert_to_json_data
 from video_analyser import analyse_video
 
 
@@ -42,13 +43,14 @@ async def analyse_video_endpoint(request: VideoAnalysisRequest):
             max_duration_seconds=request.max_duration_seconds,
             debug=request.debug,
         )
-        return {"csv_path": csv_path, "transcript_path": transcript_path}
+        json_result = convert_to_json_data(csv_path, transcript_path)
+        return json_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def download_and_analyse_video(url, csv_path, transcript_path, api_key):
-    video_path = download_video(url)
+def download_and_analyse_video(url, csv_path, transcript_path, api_key, delete_temp=True):
+    video_path, video_id = download_video(url)
     asyncio.run(
         analyse_video(
             video_path,
@@ -57,20 +59,25 @@ def download_and_analyse_video(url, csv_path, transcript_path, api_key):
             api_key=api_key,
         )
     )
-    os.remove(video_path)
-    return csv_path, transcript_path
+
+    json_result = convert_to_json_data(csv_path, transcript_path, video_id)
+    if delete_temp:
+        os.remove(video_path)
+        os.remove(csv_path)
+        os.remove(transcript_path)
+    return json_result
 
 
 @app.post("/download-and-analyse")
 def download_and_analyse(request: DownloadAndAnalyseRequest):
     try:
-        csv_path, transcript_path = download_and_analyse_video(
+        json_result = download_and_analyse_video(
             url=request.url,
             csv_path=request.csv_path,
             transcript_path=request.transcript_path,
             api_key=request.api_key,
         )
-        return {"csv_path": csv_path, "transcript_path": transcript_path}
+        return json_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
