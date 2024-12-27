@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 from dotenv import load_dotenv
 from api_utils import convert_to_json_data
@@ -43,3 +44,5 @@ if __name__ == "__main__":
     )
     json_result = convert_to_json_data(csv_path, transcript_path)
     print(json_result)
+    with open("results/test.json", "w", encoding="utf-8") as f:
+        json.dump(json_result, f, ensure_ascii=False, indent=4)
