@@ -5,6 +5,7 @@ from .base import Base
 
 class BaseModel(Base):
     """基础模型类"""
+
     __abstract__ = True
 
     id = Column(Integer, primary_key=True, autoincrement=True)

@@ -11,6 +11,7 @@ class Database:
     def create_tables(self):
         """创建所有表"""
         from .base import Base
+
         Base.metadata.create_all(self.engine)
 
     @contextmanager

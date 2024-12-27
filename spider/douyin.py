@@ -16,12 +16,15 @@ def get_douyin_info(url):
         0
     ]
     title = item_list["desc"]
-    video = item_list["video"]["play_addr"]["uri"]
-    video_url = (
-        f"https://www.douyin.com/aweme/v1/play/?video_id={video}"
-        if "mp3" not in video
-        else video
-    )
+    # video = item_list["video"]["play_addr"]["url_list"]
+    # print(item_list)
+    # video_url = (
+    #     f"https://www.douyin.com/aweme/v1/play/?video_id={video}"
+    #     if "mp3" not in video
+    #     else video
+    # )
+    video_url = item_list["video"]["play_addr"]["url_list"][0]
+    # print(video_url)
     cover = item_list["video"]["cover"]["url_list"][0]
     return {
         "title": title,

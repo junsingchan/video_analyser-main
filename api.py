@@ -15,15 +15,13 @@ from video_analyser import analyse_video
 app = FastAPI()
 
 
-
-
 class VaJson(BaseModel):
-    __tablename__ = 'fa_tuiguang_video_analyse'
+    __tablename__ = "fa_tuiguang_video_analyse"
     id = Column(Integer, primary_key=True, autoincrement=True)
     json = Column(String)
 
 
-#db_name = "http://43.139.41.57:888/phpmyadmin_1d3f62990ac1beb6/index.php?lang=zh_cn"
+# db_name = "http://43.139.41.57:888/phpmyadmin_1d3f62990ac1beb6/index.php?lang=zh_cn"
 host = "localhost"
 port = "3306"
 database_name = "weike"  # 这里替换为你要连接的具体数据库名称
@@ -33,7 +31,6 @@ password = "root"
 connection_string = f"mysql://{user_name}:{password}@{host}:{port}/{database_name}"
 # db = Database(connection_string)
 # db.create_tables()
-
 
 
 @app.post("/analyse-video")
@@ -65,7 +62,7 @@ async def download_and_analyse_endpoint(request: DownloadAndAnalyseRequest):
             video_path,
             csv_path=temp_csv,
             transcript_path=temp_txt,
-            api_key="sk-y7STSFbhg76PowDt30A0F1D2908e46C998955535892448Bc",
+            api_key=request.api_key,
             base_url=request.base_url,
             min_scene_duration_seconds=request.min_scene_duration_seconds,
             max_duration_seconds=request.max_duration_seconds,
@@ -75,8 +72,8 @@ async def download_and_analyse_endpoint(request: DownloadAndAnalyseRequest):
         for file in [video_path, temp_csv, temp_txt]:
             if os.path.exists(file):
                 os.remove(file)
-        # json_to_insert = VaJson(json=json_result)
-        # db.insert_one(json_to_insert)
+        json_to_insert = VaJson(json=json_result)
+        db.insert_one(json_to_insert)
         return json_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

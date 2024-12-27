@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 API_KEY = os.getenv("KEY")
 
+
 def send_request(data):
     url = "http://vanalyser.hgwl633.com:6688/download-and-analyse"
     response = requests.post(url, json=data)

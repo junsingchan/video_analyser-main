@@ -29,8 +29,6 @@ def download_video(url, save_path=None):
     video_id = video_info["id"]
     response = requests.get(video_url, headers=HEADERS, stream=True)
 
-    logger.debug(video_url)
-
     if save_path is None:
         save_path = os.path.join(os.getcwd(), f"{video_info['title']}.mp4")
     with open(save_path, "wb") as f:
