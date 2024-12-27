@@ -1,9 +1,10 @@
 import os
 from tempfile import NamedTemporaryFile
+
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 import uvicorn
-from sqlalchemy import Column, String
-
+from sqlalchemy import Column, String, Integer
 from api_models import VideoAnalysisRequest, DownloadAndAnalyseRequest
 from api_utils import convert_to_json_data
 from db.database import Database
@@ -14,18 +15,25 @@ from video_analyser import analyse_video
 app = FastAPI()
 
 
+
+
 class VaJson(BaseModel):
-    __tablename__ = 'va_json'
-    json = Column(String(1000))
+    __tablename__ = 'fa_tuiguang_video_analyse'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    json = Column(String)
 
 
-db_name = "http://43.139.41.57:888/phpmyadmin_1d3f62990ac1beb6/index.php?lang=zh_cn"
-user_name = "weike"
-password = "skw4jJFi8k6nFH48"
+#db_name = "http://43.139.41.57:888/phpmyadmin_1d3f62990ac1beb6/index.php?lang=zh_cn"
+host = "localhost"
+port = "3306"
+database_name = "weike"  # 这里替换为你要连接的具体数据库名称
+user_name = "root"
+password = "root"
 
-connection_string = f"mysql+pymysql://{user_name}:{password}@{db_name}"
+connection_string = f"mysql://{user_name}:{password}@{host}:{port}/{database_name}"
 db = Database(connection_string)
 db.create_tables()
+
 
 
 @app.post("/analyse-video")
