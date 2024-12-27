@@ -31,8 +31,8 @@ user_name = "root"
 password = "root"
 
 connection_string = f"mysql://{user_name}:{password}@{host}:{port}/{database_name}"
-db = Database(connection_string)
-db.create_tables()
+# db = Database(connection_string)
+# db.create_tables()
 
 
 
@@ -65,7 +65,7 @@ async def download_and_analyse_endpoint(request: DownloadAndAnalyseRequest):
             video_path,
             csv_path=temp_csv,
             transcript_path=temp_txt,
-            api_key=request.api_key,
+            api_key="sk-y7STSFbhg76PowDt30A0F1D2908e46C998955535892448Bc",
             base_url=request.base_url,
             min_scene_duration_seconds=request.min_scene_duration_seconds,
             max_duration_seconds=request.max_duration_seconds,
@@ -75,8 +75,8 @@ async def download_and_analyse_endpoint(request: DownloadAndAnalyseRequest):
         for file in [video_path, temp_csv, temp_txt]:
             if os.path.exists(file):
                 os.remove(file)
-        json_to_insert = VaJson(json=json_result)
-        db.insert_one(json_to_insert)
+        # json_to_insert = VaJson(json=json_result)
+        # db.insert_one(json_to_insert)
         return json_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

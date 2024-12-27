@@ -3,6 +3,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from fastapi import Request
 
 load_dotenv()
 API_KEY = os.getenv("KEY")
